@@ -1359,14 +1359,115 @@ def haarPowerMod(
 
 
 def _runSinglerealisation(args):
-    """Worker function for a single Monte Carlo realisation."""
+    """
+    Worker function for a single Monte Carlo realisation.
+
+    Returns both the MVT and its uncertainty, because haarPowerMod uses them to signal the outcome:
+        * failed realisation (not enough significant signal): MVT = 0
+        * upper limit (no confirmed linear rise before the break): uncertainty = 0
+        * valid measurement: MVT > 0 and uncertainty > 0
+    """
     binCounts, binErrors, resampleErrors, binSizeSeconds = args
     sampledCounts = np.random.poisson(lam=binCounts)
     iterationErrors = np.sqrt(sampledCounts) if resampleErrors else binErrors
-    (_, _, minimumVariabilityTimescale, _, _, _, _) = haarPowerMod(
+    (_, _, minimumVariabilityTimescale, minimumVariabilityTimescaleUncertainty, _, _, _) = haarPowerMod(
         sampledCounts, iterationErrors, minimumBinSizeSeconds=binSizeSeconds
     )
-    return minimumVariabilityTimescale
+    return minimumVariabilityTimescale, minimumVariabilityTimescaleUncertainty
+
+
+def estimateMvtDistribution(
+        binCounts,
+        binErrors,
+        haarPowerMod,
+        binSizeSeconds,
+        nRealisations=300,
+        resampleErrors=False,
+        nWorkers=None) -> dict:
+    """
+    Run the Monte Carlo realisations and return the full MVT distribution, following Bala et al. (2026),
+    Section 2.3: only valid measurements (MVT > 0 with a non-zero uncertainty) are kept; failed
+    realisations and upper limits are counted separately and excluded from the summary statistics.
+
+    Parameters are the same as estimateMvtUncertainty.
+
+    Returns
+    -------
+    dict with keys:
+        mvtValues, mvtUncertainties : np.ndarray
+            Raw MVT (seconds) and uncertainty from every realisation.
+        validMask, limitMask, failedMask : np.ndarray (bool)
+            Which realisations were valid measurements, upper limits, or failures.
+        nRealisations, nValid, nLimit, nFailed : int
+        successRate : float
+            nValid / nRealisations (reported as "Success" in Bala et al. Table 3).
+        median, p16, p84 : float
+            Median and 16th/84th percentiles of the valid MVTs (seconds). NaN if nValid == 0.
+        mvt84 : float
+            The 84th percentile, used by Bala et al. as the upper-limit value.
+        mean, std : float
+            Mean and standard deviation of the valid MVTs (seconds). NaN if too few values.
+        meanAll, stdAll : float
+            Mean and standard deviation of ALL realisations, including failures and limits
+            (the original behaviour, kept for comparison).
+    """
+    binCounts = np.asarray(binCounts)
+    binErrors = np.asarray(binErrors)
+    mvtValues = np.empty(nRealisations)
+    mvtUncertainties = np.empty(nRealisations)
+
+    args = [(binCounts, binErrors, resampleErrors, binSizeSeconds)] * nRealisations
+
+    with ProcessPoolExecutor(max_workers=nWorkers) as executor:
+        futures = {executor.submit(_runSinglerealisation, arg): i for i, arg in enumerate(args)}
+        progressBar = tqdm(as_completed(futures), total=nRealisations, desc="Monte Carlo MVT sampling", unit="realisation")
+        for future in progressBar:
+            i = futures[future]
+            mvtValues[i], mvtUncertainties[i] = future.result()
+            progressBar.set_postfix(mvt=f"{mvtValues[i]:.4f}")
+
+    # classify every realisation
+    failedMask = ~np.isfinite(mvtValues) | (mvtValues <= 0.0)
+    limitMask = ~failedMask & ~(mvtUncertainties > 0.0)
+    validMask = ~failedMask & ~limitMask
+    validValues = mvtValues[validMask]
+
+    nValid = int(validMask.sum())
+    nLimit = int(limitMask.sum())
+    nFailed = int(failedMask.sum())
+
+    if nValid > 0:
+        p16, median, p84 = (float(v) for v in np.percentile(validValues, [16, 50, 84]))
+        mean = float(np.mean(validValues))
+    else:
+        p16 = median = p84 = mean = float("nan")
+    std = float(np.std(validValues, ddof=1)) if nValid > 1 else float("nan")
+
+    logger.info(
+        f"Monte Carlo MVT: {nValid} valid, {nLimit} upper limits, {nFailed} failed "
+        f"out of {nRealisations} (success rate {nValid / nRealisations:.1%})"
+    )
+
+    return {
+        "mvtValues": mvtValues,
+        "mvtUncertainties": mvtUncertainties,
+        "validMask": validMask,
+        "limitMask": limitMask,
+        "failedMask": failedMask,
+        "nRealisations": int(nRealisations),
+        "nValid": nValid,
+        "nLimit": nLimit,
+        "nFailed": nFailed,
+        "successRate": nValid / nRealisations,
+        "median": median,
+        "p16": p16,
+        "p84": p84,
+        "mvt84": p84,
+        "mean": mean,
+        "std": std,
+        "meanAll": float(np.mean(mvtValues)),
+        "stdAll": float(np.std(mvtValues, ddof=1)) if nRealisations > 1 else float("nan"),
+    }
 
 
 def estimateMvtUncertainty(
@@ -1376,10 +1477,12 @@ def estimateMvtUncertainty(
         binSizeSeconds,
         nRealisations=300,
         resampleErrors=False,
-        nWorkers=None):
+        nWorkers=None,
+        statistic="median"):
     """
     Estimate the MVT and its uncertainty using Monte Carlo sampling,
-    with realisations computed in parallel.
+    with realisations computed in parallel. Wrapper around estimateMvtDistribution that keeps the
+    original three-value return so existing callers keep working.
 
     Parameters
     ----------
@@ -1397,34 +1500,49 @@ def estimateMvtUncertainty(
         If False (default), binErrors are held fixed across all realisations (geometric instrument i.e. Swift). If True, errors are recomputed as sqrt(sampledCounts) each iteration (Poisson-derived instrument).
     nWorkers : int or None, optional
         Number of parallel worker processes. Defaults to None, which lets ProcessPoolExecutor use the number of available CPU cores.
+    statistic : str, optional
+        "median" (default, Bala et al. 2026): median of the valid MVTs, error = half the 16th-84th percentile range.
+        "mean": mean and standard deviation of the valid MVTs.
+        "meanAll": original behaviour, mean and standard deviation of all realisations including failures and limits.
 
     Returns
     -------
-    mvtMean : float
-        Mean MVT across all realisations.
-    mvtStd : float
-        Standard deviation of MVT values across all realisations.
+    mvtCentral : float
+        Central MVT value (seconds). 0.0 if no realisation gave a valid measurement.
+    mvtError : float
+        Uncertainty on the MVT (seconds). 0.0 if no realisation gave a valid measurement.
     mvtValues : np.ndarray
-        Full array of MVT values from each realisation.
+        The valid MVT values (seconds). All values for statistic="meanAll".
     """
-    binCounts = np.asarray(binCounts)
-    binErrors = np.asarray(binErrors)
-    mvtValues = np.empty(nRealisations)
+    result = estimateMvtDistribution(
+        binCounts,
+        binErrors,
+        haarPowerMod,
+        binSizeSeconds,
+        nRealisations=nRealisations,
+        resampleErrors=resampleErrors,
+        nWorkers=nWorkers
+    )
 
-    args = [(binCounts, binErrors, resampleErrors, binSizeSeconds)] * nRealisations
+    if statistic == "meanAll":
+        return result["meanAll"], result["stdAll"], result["mvtValues"]
 
-    with ProcessPoolExecutor(max_workers=nWorkers) as executor:
-        futures = {executor.submit(_runSinglerealisation, arg): i for i, arg in enumerate(args)}
-        progressBar = tqdm(as_completed(futures), total=nRealisations, desc="Monte Carlo MVT sampling", unit="realisation")
-        for future in progressBar:
-            i = futures[future]
-            mvtValues[i] = future.result()
-            progressBar.set_postfix(mvt=f"{mvtValues[i]:.4f}")
+    validValues = result["mvtValues"][result["validMask"]]
+    if result["nValid"] == 0:
+        logger.warning("No valid MVT measurements in any Monte Carlo realisation; returning 0.")
+        return 0.0, 0.0, validValues
 
-    mvtMean = np.mean(mvtValues)
-    mvtStd  = np.std(mvtValues, ddof=1)
+    match statistic:
+        case "median":
+            mvtCentral = result["median"]
+            mvtError = 0.5 * (result["p84"] - result["p16"])
+        case "mean":
+            mvtCentral = result["mean"]
+            mvtError = result["std"] if np.isfinite(result["std"]) else 0.0
+        case _:
+            raise ValueError(f"Unknown statistic: {statistic}. Use 'median', 'mean' or 'meanAll'.")
 
-    return mvtMean, mvtStd, mvtValues
+    return mvtCentral, mvtError, validValues
 
 
 def processSingleWindowWorker(
