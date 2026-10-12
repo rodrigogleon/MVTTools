@@ -1367,8 +1367,10 @@ def _runSinglerealisation(args):
         * upper limit (no confirmed linear rise before the break): uncertainty = 0
         * valid measurement: MVT > 0 and uncertainty > 0
     """
-    binCounts, binErrors, resampleErrors, binSizeSeconds = args
-    sampledCounts = np.random.poisson(lam=binCounts)
+    binCounts, binErrors, resampleErrors, binSizeSeconds, seed = args
+    # each realisation gets its own random generator, so parallel workers never repeat the same noise
+    rng = np.random.default_rng(seed)
+    sampledCounts = rng.poisson(lam=binCounts)
     iterationErrors = np.sqrt(sampledCounts) if resampleErrors else binErrors
     (_, _, minimumVariabilityTimescale, minimumVariabilityTimescaleUncertainty, _, _, _) = haarPowerMod(
         sampledCounts, iterationErrors, minimumBinSizeSeconds=binSizeSeconds
@@ -1383,13 +1385,18 @@ def estimateMvtDistribution(
         binSizeSeconds,
         nRealisations=300,
         resampleErrors=False,
-        nWorkers=None) -> dict:
+        nWorkers=None,
+        seed=None) -> dict:
     """
     Run the Monte Carlo realisations and return the full MVT distribution, following Bala et al. (2026),
     Section 2.3: only valid measurements (MVT > 0 with a non-zero uncertainty) are kept; failed
     realisations and upper limits are counted separately and excluded from the summary statistics.
 
     Parameters are the same as estimateMvtUncertainty.
+
+    Each realisation is given its own independent seed (spawned from a single SeedSequence). Using the
+    global np.random state inside the workers is not safe: on Linux the worker processes are forked and
+    all inherit the same random state, so different workers produce identical realisations.
 
     Returns
     -------
@@ -1416,7 +1423,9 @@ def estimateMvtDistribution(
     mvtValues = np.empty(nRealisations)
     mvtUncertainties = np.empty(nRealisations)
 
-    args = [(binCounts, binErrors, resampleErrors, binSizeSeconds)] * nRealisations
+    seedSequence = np.random.SeedSequence(seed)
+    childSeeds = seedSequence.spawn(nRealisations)
+    args = [(binCounts, binErrors, resampleErrors, binSizeSeconds, childSeeds[i]) for i in range(nRealisations)]
 
     with ProcessPoolExecutor(max_workers=nWorkers) as executor:
         futures = {executor.submit(_runSinglerealisation, arg): i for i, arg in enumerate(args)}
@@ -1478,7 +1487,8 @@ def estimateMvtUncertainty(
         nRealisations=300,
         resampleErrors=False,
         nWorkers=None,
-        statistic="median"):
+        statistic="median",
+        seed=None):
     """
     Estimate the MVT and its uncertainty using Monte Carlo sampling,
     with realisations computed in parallel. Wrapper around estimateMvtDistribution that keeps the
@@ -1504,6 +1514,9 @@ def estimateMvtUncertainty(
         "median" (default, Bala et al. 2026): median of the valid MVTs, error = half the 16th-84th percentile range.
         "mean": mean and standard deviation of the valid MVTs.
         "meanAll": original behaviour, mean and standard deviation of all realisations including failures and limits.
+    seed : int or None, optional
+        Master seed for the Monte Carlo. None (default) draws fresh entropy, so every run is different.
+        Give an integer to make a run exactly reproducible.
 
     Returns
     -------
@@ -1521,7 +1534,8 @@ def estimateMvtUncertainty(
         binSizeSeconds,
         nRealisations=nRealisations,
         resampleErrors=resampleErrors,
-        nWorkers=nWorkers
+        nWorkers=nWorkers,
+        seed=seed
     )
 
     if statistic == "meanAll":
