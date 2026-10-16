@@ -84,18 +84,18 @@ def haarDenoise(
         leftPaddingLength = totalPaddingNeeded // 2
         rightPaddingLength = totalPaddingNeeded - leftPaddingLength
         
-        # np.pad the signal, 'reflect' mode mirrors the edge data accurately
+        # np.pad the signal, 'symmetric' mode repeats the edge value, as in the original haar_denoise
         paddedSignalData = np.pad(
             data, 
             (leftPaddingLength, rightPaddingLength), 
-            mode='reflect'
+            mode='symmetric'
         )
         
         if useError:
             paddedNoiseVariance = np.pad(
                 varianceError, 
                 (leftPaddingLength, rightPaddingLength), 
-                mode='reflect'
+                mode='symmetric'
             )
 
     # initialize the fall-back noise estimate to 1.0
@@ -221,8 +221,9 @@ def haarDenoise(
         levelApproximationCoefficients[noiseMask] = 0.0
 
 
-        # reconstruction via inverse transformation
-        levelApproximationCoefficients.cumsum(out = levelApproximationCoefficients)
+        # reconstruction via inverse transformation (cumulative sum of the REVERSED coefficients,
+        # as in the original haar_denoise)
+        levelApproximationCoefficients[:] = levelApproximationCoefficients[::-1].cumsum()
 
         # pre-calculate internal difference blocks to keep array operations vectorized
         diffMain: np.ndarray = (
