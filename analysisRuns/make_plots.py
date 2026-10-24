@@ -40,6 +40,9 @@ SET_ORDER = ["1det", "3det", "5det", "7det", "all"]
 SET_LABEL = {"1det": "1 det", "3det": "3 det", "5det": "5 det", "7det": "7 det", "all": "12 det"}
 SET_N = {"1det": 1, "3det": 3, "5det": 5, "7det": 7, "all": 12}
 SET_COLOR = {s: c for s, c in zip(SET_ORDER, plt.rcParams["axes.prop_cycle"].by_key()["color"])}
+P1_SET_SPACING = 1.18                                # P1: horizontal spacing factor between detector sets
+P4_ROW_SPACING = 1.06                                # P4: horizontal spacing factor between rows in a column
+ROW_COLORS = plt.rcParams["axes.prop_cycle"].by_key()["color"]   # P4: one colour per row within a column
 P5_RUN = "F"                                         # GRB 230307A row for P5 (merged runs exist for B and F)
 P6_RUN = "F"                                         # GRB 230307A row whose saved light curves P6 uses
 P6_BIN_MS = 1.8                                      # plotted bin width (about the MVT)
@@ -79,7 +82,7 @@ def plotP1(allRows):
         sets = [s for s in SET_ORDER if any(r["set"] == s for r in rows)]
         for i, s in enumerate(sets):
             sub = sorted([r for r in rows if r["set"] == s], key=lambda r: r["bw_ms"])
-            shift = 1.08 ** (i - (len(sets) - 1) / 2)          # small horizontal offsets so error bars do not overlap
+            shift = P1_SET_SPACING ** (i - (len(sets) - 1) / 2)   # equal horizontal offsets between detector sets
             x = np.array([r["bw_ms"] for r in sub]) * shift
             ax.errorbar(x / 1.03, [r["med"] for r in sub], yerr=[[r["minus"] for r in sub], [r["plus"] for r in sub]],
                         fmt="o-", color=SET_COLOR[s], ms=5, lw=1, capsize=3, label=f"{SET_LABEL[s]} (ours)")
@@ -161,10 +164,10 @@ def drawStep(ax, step, color, label):
     snr = [c["snr"] for c in cum]
     ax.plot(k, snr, "o-", color=color, ms=4, lw=1, label=label)
     for c in cum:
-        ax.annotate(c["added"], (c["k"], c["snr"]), textcoords="offset points", xytext=(0, 5),
-                    ha="center", fontsize=6, color=color)
+        ax.annotate(c["added"], (c["k"], c["snr"]), textcoords="offset points", xytext=(0, 8),
+                    ha="center", fontsize=6, color=color, zorder=5)
     best = int(np.argmax(snr))
-    ax.plot(k[best], snr[best], "*", color=color, ms=14, mec="k")
+    ax.plot(k[best], snr[best], "*", color=color, ms=11, mec="k", zorder=3)
     return k, snr, best
 
 
@@ -203,18 +206,26 @@ def plotP4(allRows):
     print("\nP4 values (SNR at Bala et al.'s median MVT, divided by Table 3)")
     print(f"{'GRB':11s}{'run':4s}{'dets':>5s}{'Bala MVT':>10s}{'Table 3':>9s}{'physical':>10s}{'ratio':>7s}"
           f"{'Bala-comp':>11s}{'ratio':>7s}")
+    # rows grouped by number of detectors (one column each, both bursts together); within a column every row gets
+    # its own colour and position, and the letters alternate above and below the markers
+    columns = {}
     for grb in GRBS:
-        rows = sorted(allRows[grb], key=lambda r: (SET_N[r["set"]], r["bw_ms"]))
-        for j, r in enumerate(rows):
-            n = SET_N[r["set"]]
-            x = n * 1.03 ** (j % 3 - 1) * (1.02 if grb == "GRB211211A" else 0.98)   # small offsets
+        for r in sorted(allRows[grb], key=lambda r: r["bw_ms"]):
+            columns.setdefault(SET_N[r["set"]], []).append((grb, r))
+    for n, members in sorted(columns.items()):
+        for j, (grb, r) in enumerate(members):
+            x = n * P4_ROW_SPACING ** (j - (len(members) - 1) / 2)
+            color = ROW_COLORS[j % len(ROW_COLORS)]
             rp, rb = r["snrPhysAtB"] / r["bSnr"], r["snrBAtB"] / r["bSnr"]
-            ax.plot(x, rp, markers[grb], mfc="none", color=SET_COLOR[r["set"]], ms=7)
-            ax.plot(x, rb, markers[grb], color=SET_COLOR[r["set"]], ms=6)
-            ax.annotate(r["run"], (x, rp), textcoords="offset points", xytext=(7, 0), va="center", fontsize=7)
+            ax.plot(x, rp, markers[grb], mfc="none", color=color, ms=7)
+            ax.plot(x, rb, markers[grb], color=color, ms=6)
+            above = j % 2 == 0
+            ax.annotate(r["run"], (x, rp), textcoords="offset points", xytext=(0, 7 if above else -8),
+                        ha="center", va="bottom" if above else "top", fontsize=7, color=color)
             print(f"{grb:11s}{r['run']:4s}{n:>5d}{r['bMed']:>10.1f}{r['bSnr']:>9.1f}{r['snrPhysAtB']:>10.1f}{rp:>7.3f}"
                   f"{r['snrBAtB']:>11.1f}{rb:>7.3f}")
     ax.axhline(1, color="k", ls="--", lw=1)
+    ax.margins(y=0.1)                                     # room for the letters above the top markers
     for grb, m in markers.items():
         ax.plot([], [], m, color="0.3", mfc="none", label=f"{grb}: physical SNR (all photons)")
         ax.plot([], [], m, color="0.3", label=f"{grb}: Bala-compatible SNR (merged)")

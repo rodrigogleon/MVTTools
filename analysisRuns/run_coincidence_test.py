@@ -3,8 +3,8 @@ Are the photons removed by GbmTte.merge explained by random coincidences plus a 
 
 GbmTte.merge with its default force_unique=True keeps one event per distinct arrival time. Times are stored in
 ticks of 2 microseconds (measured from the data; the stored times differ by 1.907 or 2.027 microseconds because of
-floating-point rounding, averaging 2.000), and a detector cannot record two events in the same tick (its dead time
-is longer than a tick), so an event is removed only when another detector has an event in the same tick.
+floating-point rounding, averaging 2.000), and a detector never records two events in the same tick (no event
+times repeat within one detector), so an event is removed only when another detector has an event in the same tick.
 
 Prediction, two parts:
   1. random coincidences of separate photons: if detector i has probability p_i of an event in a given tick, the
@@ -178,7 +178,7 @@ if __name__ == "__main__":
                   f"{'yes' if ok else 'NO':>5s}")
 
         if len(dets) == 1:
-            # the tick cannot be measured from one detector (its dead time is longer than one tick)
+            # the tick criterion applies to sets of two or more detectors (as fixed before running)
             crit = {"one detector removes nothing": bool(obsLost.sum() == 0)}
         else:
             crit = {"tick within 1% of 2 microseconds": all(abs(t / TICK_S - 1) <= 1e-2 for t in ticks)}
