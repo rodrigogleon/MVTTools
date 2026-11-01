@@ -25,6 +25,12 @@ Scripts used to produce the results in the project logbook. They run on the Chan
 | run_pair_gaps.py | Pairs of events in two detectors counted against their time gap: excess at zero gap = genuine duplicates (one event recorded by several detectors); burst and background-only windows, energies and detector pairs | none (GDT only) | pair_gaps, plots/P7b |
 | run_coincidence_test.py | Photons removed by GbmTte.merge against count rate, compared with random coincidences (2 microsecond tick) plus a steady duplicate rate measured in a background-only window (plot P7) | none (GDT only) | coincidence_test, plots/P7 |
 | make_plots.py | Benchmark plots P1-P6 from saved results only (no reruns); --only P4 makes single plots; prints every plotted value and warns if it differs from the saved summaries | none (reads results) | plots |
+| run_injection_recovery.py | Injection-recovery test: 7 synthetic pulses (Gaussian G1-G30, Norris N3_10-N30_100) on a 1000 counts/s Poisson background, amplitudes 0.3-300 plus a bright run (3000), bin widths 0.1, 0.01 and 0.003 ms, 300 independent simulations per setting; true MVT by Bala et al.'s rule, SNR_MVT, class, criteria 1-5, plots P8 and P9 | 37da31f (Haar code as 9ad6fbd) | injection_recovery, plots/P8, P9 |
+| analyse_injection_saved.py | Analysis A of the saved injection runs (no reruns): valid / upper-limit / failed split, repeated values and clusters, criterion 1 against the bright median at the same bin width | none (reads results) | injection_recovery/analysis_A, plots/IR_hist_* |
+| analyse_rung_positions.py | Analysis A4 (no reruns): position of every MVT between the rungs of the Haar timescale ladder (4 per doubling) and KS test against uniform, for the injection settings and the saved real-burst Monte Carlo runs | none (reads results) | injection_recovery/analysis_A4, plots/IR_rungs_*, IR_rung_position, REAL_rungs, REAL_rung_position |
+| run_b0_ladder.py | B0: the injection simulations (same photons) analysed with 8 rungs per doubling (outputBinningRatio = 8) instead of 4 | 37da31f (Haar code as 9ad6fbd) | injection_recovery/b0_ratio8, plots/B0_* |
+| run_b1_truth.py | B1: true MVT of the narrow pulses with bin widths down to 0.0001 ms (same photons), settled check, criteria 1-4 recomputed | 37da31f (Haar code as 9ad6fbd) | injection_recovery/b1_truth, plots/B1_* |
+| run_b3_threshold.py | B3/B5: lowest SNR_MVT from which the median MVT is within 20% of the bright value at the same bin width; brightness steps of x1.2; standard conditions and precursor-like conditions (0.384 s window, 5000 counts/s) | 37da31f (Haar code as 9ad6fbd) | injection_recovery/b3_threshold, plots/B3_* |
 
 Notes
 - run_bala_rows.py is the current version for GRB 230307A (output folder bala_rows_8-900keV_rs_haarfix; it also
@@ -53,3 +59,7 @@ Notes
   prediction (v2 includes the duplicates).
 - From run_extra_bkg.py onwards, screen output is saved in results/logs/.
 - All Monte Carlo runs use 300 realisations and seed 2026 unless stated otherwise.
+- The injection-recovery scripts import run_injection_recovery.py, so they must sit in the same folder. They
+  simulate photons directly (no merge), so the physical and Bala-compatible SNR_MVT are the same there.
+  run_b0_ladder.py and run_b1_truth.py reuse the seeds of run_injection_recovery.py (same photons) and stop if the
+  first realisations do not reproduce the saved values; run_b3_threshold.py uses new seeds. All are resumable.
