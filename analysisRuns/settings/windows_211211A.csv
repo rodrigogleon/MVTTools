@@ -1,0 +1,27 @@
+# GRB 211211A, Fermi/GBM trigger bn211211549. T0 = 660921004.65092 s MET (GBM trigger time).
+# Times in s from T0. Precursor edges from Bayesian blocks; g windows are the slices of Gompertz et al.
+# (2023); f2 windows have edges read off Dichiara et al. (2023) Fig. 2 (notebook 14).
+label,t_start,t_stop,source
+pre,-0.016,0.432,Bayesian blocks
+g00_02,0.0,2.0,Gompertz et al. (2023) slice
+g02_04,2.0,4.0,Gompertz et al. (2023) slice
+g04_06,4.0,6.0,Gompertz et al. (2023) slice
+g06_08,6.0,8.0,Gompertz et al. (2023) slice
+g08_10,8.0,10.0,Gompertz et al. (2023) slice
+g10_12,10.0,12.0,Gompertz et al. (2023) slice
+g12_16,12.0,16.0,Gompertz et al. (2023) slice
+g16_18,16.0,18.0,Gompertz et al. (2023) slice
+g18_20,18.0,20.0,Gompertz et al. (2023) slice
+g20_22,20.0,22.0,Gompertz et al. (2023) slice
+g22_24,22.0,24.0,Gompertz et al. (2023) slice
+g24_26,24.0,26.0,Gompertz et al. (2023) slice
+g26_30,26.0,30.0,Gompertz et al. (2023) slice
+g30_34,30.0,34.0,Gompertz et al. (2023) slice
+g34_38,34.0,38.0,Gompertz et al. (2023) slice
+g38_42,38.0,42.0,Gompertz et al. (2023) slice
+g42_46,42.0,46.0,Gompertz et al. (2023) slice
+g46_50,46.0,50.0,Gompertz et al. (2023) slice
+g50_60,50.0,60.0,Gompertz et al. (2023) slice
+g60_70,60.0,70.0,Gompertz et al. (2023) slice
+f2_01_10,1.0,10.0,"Dichiara Fig. 2, read off"
+f2_27_66,27.0,66.0,"Dichiara Fig. 2, read off"

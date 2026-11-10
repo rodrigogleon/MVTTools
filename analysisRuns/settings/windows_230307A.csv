@@ -1,0 +1,18 @@
+# GRB 230307A, Fermi/GBM trigger bn230307656. T0 = 699896651.671248 s MET (GBM trigger time).
+# Times in s from T0. Windows from Dichiara et al. (2023, ApJL 954, L29): Table 2 (spectra) and Table 1 (MVT).
+# 3-7 s has TTE packet losses and is excluded, as in Dichiara. The GBM team also report pile-up in na (2.5-7.5 s) and b1 (2.5-11 s), GCN 33551; m01, m02, m03 and t1_07_18 overlap those.
+label,t_start,t_stop,dichiara_table
+pre,-0.064,0.320,1+2
+m01,0.320,3.0,1+2
+m02,7.0,9.0,2
+m03,9.0,11.0,2
+m04,11.0,13.0,2
+m05,13.0,15.0,2
+m06,15.0,18.5,2
+m07,18.5,22.0,2
+m08,22.0,25.5,2
+m09,25.5,29.0,2
+m10,29.0,32.5,2
+m11,32.5,40.0,2
+t1_07_18,7.0,18.0,1
+t1_18_40,18.0,40.0,1

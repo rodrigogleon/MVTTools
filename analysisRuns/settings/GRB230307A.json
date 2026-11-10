@@ -1,0 +1,369 @@
+{
+ "_about": "Every number specific to GRB 230307A. Sources: Iñaki's answers of 4 Nov 2026 (T0, md5, windows, excluded and pile-up intervals, his background, detectors, live fractions, gaps, Dichiara et al. values) and run_grb_mvt.py (MVT background intervals and Bala et al. Table 3 rows, which reproduce their Table 3).",
+ "burst": "GRB230307A",
+ "trigger": "bn230307656",
+ "t0_met": 699896651.671248,
+ "dataFolder": "GRB230307A/current",
+ "tteVersion": "v00",
+ "md5": {
+  "n0": "5bbd792bc4a51cd39e0bb3246d717a25",
+  "n1": "1734c7121d3bd5a6056ddc3353268f26",
+  "n2": "57e58899a7534a63bdbbebaf388b3f67",
+  "n3": "be59b5f4c367b6f7534cbbe8dc5b34af",
+  "n4": "5f235d5e75f54617817f322bf7c3c8fa",
+  "n5": "8464521eadcde021286d5ea0c45f822d",
+  "n6": "0b2eebc6ab951d9b4f3435b07dcd90e5",
+  "n7": "c335f1004cb532b69144d6513916eaf8",
+  "n8": "fa2b1f7e3f3be544366034efc1a203b3",
+  "n9": "7c071fb6c8f30a198c99492a949c47bc",
+  "na": "cdb93269bf0dbe55f2b09727b9d78410",
+  "nb": "95c56a905ef657986b34b0bfff18cf67"
+ },
+ "windowsFile": "windows_230307A.csv",
+ "inakiGapsFile": "inaki_gaps_per_detector.csv",
+ "inakiGapsBurst": "230307A",
+ "inakiLiveFile": "inaki_live_230307A.csv",
+ "bkgIntervals": [
+  [
+   -68.8,
+   -18.8
+  ],
+  [
+   69.4,
+   119.4
+  ]
+ ],
+ "bkgOrder": 1,
+ "inakiBkgIntervals": [
+  [
+   -89.0,
+   -7.0
+  ],
+  [
+   162.0,
+   273.0
+  ]
+ ],
+ "inakiBkgOrder": 3,
+ "excluded": [
+  {
+   "start": 3.0,
+   "stop": 7.0,
+   "why": "TTE packet losses (GCN 33551)"
+  }
+ ],
+ "pileup": [
+  {
+   "det": "na",
+   "start": 2.5,
+   "stop": 7.5
+  },
+  {
+   "det": "b1",
+   "start": 2.5,
+   "stop": 11.0
+  }
+ ],
+ "comparisonSets": {
+  "inaki_spectral": [
+   "n6",
+   "n8",
+   "na"
+  ],
+  "inaki_fixed": [
+   "n0",
+   "n1",
+   "n6",
+   "n7",
+   "n9",
+   "na"
+  ]
+ },
+ "dichiaraBand": [
+  8.0,
+  1000.0
+ ],
+ "dichiara": {
+  "pre": {
+   "mvt_ms": 17.0,
+   "err_ms": 2.0,
+   "limit": false
+  },
+  "m01": {
+   "mvt_ms": 12.0,
+   "err_ms": null,
+   "limit": true
+  },
+  "t1_07_18": {
+   "mvt_ms": 15.0,
+   "err_ms": 2.0,
+   "limit": false
+  },
+  "t1_18_40": {
+   "mvt_ms": 62.0,
+   "err_ms": 4.0,
+   "limit": false
+  }
+ },
+ "tiers": {
+  "1": [
+   "pre",
+   "m01",
+   "t1_07_18",
+   "t1_18_40"
+  ],
+  "2": [
+   "m02",
+   "m03",
+   "m04",
+   "m05",
+   "m06",
+   "m07",
+   "m08",
+   "m09"
+  ],
+  "3": [
+   "m10",
+   "m11"
+  ]
+ },
+ "redshift": 0.065,
+ "regression": {
+  "rowsSnr": "snr_classify/GRB230307A/summary.json",
+  "rows": {
+   "B": {
+    "dets": [
+     "n0",
+     "n1",
+     "n6",
+     "n7",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 1e-05,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunB/summary.json",
+    "bala": {
+     "single": "1.3 ± 0.6",
+     "median": 1.9,
+     "plus": 0.7,
+     "minus": 0.4,
+     "snr": 94.2,
+     "success": 44.3,
+     "failed": 55.7
+    }
+   },
+   "C": {
+    "dets": [
+     "n0",
+     "n1",
+     "n6",
+     "n7",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 0.0001,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunC/summary.json",
+    "bala": {
+     "single": "4.2 ± 0.6",
+     "median": 4.2,
+     "plus": 0.4,
+     "minus": 0.5,
+     "snr": 135.4,
+     "success": 98.0,
+     "failed": 2.0
+    }
+   },
+   "D": {
+    "dets": [
+     "n0",
+     "n1",
+     "n6",
+     "n7",
+     "na"
+    ],
+    "bw": 0.0001,
+    "interval": [
+     -1.6,
+     45.3
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunD/summary.json",
+    "bala": {
+     "single": "4.3 ± 0.8",
+     "median": 4.4,
+     "plus": 0.7,
+     "minus": 0.5,
+     "snr": 137.0,
+     "success": 93.0,
+     "failed": 7.0
+    }
+   },
+   "Ds": {
+    "dets": [
+     "n0",
+     "n1",
+     "n6",
+     "n7",
+     "na"
+    ],
+    "bw": 0.0001,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunDs/summary.json",
+    "bala": {
+     "single": "4.3 ± 0.8",
+     "median": 4.4,
+     "plus": 0.7,
+     "minus": 0.5,
+     "snr": 137.0,
+     "success": 93.0,
+     "failed": 7.0
+    }
+   },
+   "E": {
+    "dets": [
+     "n0",
+     "n1",
+     "n2",
+     "n3",
+     "n4",
+     "n5",
+     "n6",
+     "n7",
+     "n8",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 0.0001,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunE/summary.json",
+    "bala": {
+     "single": "3.8 ± 0.6",
+     "median": 3.9,
+     "plus": 0.5,
+     "minus": 0.3,
+     "snr": 116.2,
+     "success": 100.0,
+     "failed": 0.0
+    }
+   },
+   "F": {
+    "dets": [
+     "n0",
+     "n1",
+     "n2",
+     "n3",
+     "n4",
+     "n5",
+     "n6",
+     "n7",
+     "n8",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 1e-05,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunF/summary.json",
+    "bala": {
+     "single": "1.5 ± 0.5",
+     "median": 1.8,
+     "plus": 0.4,
+     "minus": 0.3,
+     "snr": 82.1,
+     "success": 62.3,
+     "failed": 37.7
+    }
+   },
+   "G": {
+    "dets": [
+     "n0",
+     "n1",
+     "n6",
+     "n7",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 3e-06,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunG/summary.json",
+    "bala": {
+     "single": "1.3 ± 0.5",
+     "median": 1.7,
+     "plus": 0.7,
+     "minus": 0.4,
+     "snr": 90.9,
+     "success": 36.3,
+     "failed": 63.7
+    }
+   },
+   "H": {
+    "dets": [
+     "n0",
+     "n1",
+     "n2",
+     "n3",
+     "n4",
+     "n5",
+     "n6",
+     "n7",
+     "n8",
+     "n9",
+     "na",
+     "nb"
+    ],
+    "bw": 3e-06,
+    "interval": [
+     -1.64,
+     18.0
+    ],
+    "saved": "bala_rows_8-900keV_rs_haarfix/RunH/summary.json",
+    "bala": {
+     "single": "1.4 ± 0.4",
+     "median": 1.8,
+     "plus": 0.5,
+     "minus": 0.3,
+     "snr": 80.7,
+     "success": 57.7,
+     "failed": 42.3
+    }
+   }
+  },
+  "precursor": {
+   "interval": [
+    -0.064,
+    0.32
+   ],
+   "dir": "precursor_mvt/GRB230307A"
+  },
+  "gaps": {
+   "params": "precursor_mvt/GRB230307A/artefacts/params.json",
+   "scan": [
+    -1.0,
+    2.0
+   ]
+  }
+ }
+}
