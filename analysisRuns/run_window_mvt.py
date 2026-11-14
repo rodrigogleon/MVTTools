@@ -1135,11 +1135,12 @@ def systematics(rec):
 
 
 def decide(rec, isMain):
-    """Step 14, fixed before running. Upper limit if: no valid MVT, class LUL or UL, no plateau, or the
-    made-to-measure check failed. Otherwise a value; trusted = true only once the made-to-measure check passed."""
+    """Step 14, fixed before running. Upper limit if: no valid MVT, class LUL or UL, or no plateau. Otherwise a
+    value. The made-to-measure check (step 12) does not decide (12 Nov 2026): trusted = true if it passed, false if it
+    failed, untested if it has not run."""
     q = rec["mc"][f"{BIN_WIDTHS[-1]:g}"]
     f = set(rec["flags"])
-    reasons = [x for x in ("no-valid", "class-LUL", "class-UL", "no-plateau", "mtm-fail") if x in f]
+    reasons = [x for x in ("no-valid", "class-LUL", "class-UL", "no-plateau") if x in f]
     if "no-valid" in f:
         lim = q.get("limits_p84_ms")
         if lim is None:
@@ -1153,7 +1154,7 @@ def decide(rec, isMain):
     elif rec["madeToMeasure"] is None or rec["madeToMeasure"].get("informational"):
         trusted = "untested"
     else:
-        trusted = "true"
+        trusted = "false" if "mtm-fail" in f else "true"   # step 12 is reported, it does not decide (12 Nov 2026)
     return dict(decision=dict(kind="value", mvt_ms=q["median_ms"], err_lo_ms=q["minus_err_ms"],
                               err_hi_ms=q["plus_err_ms"], trusted=trusted, reasons=[]))
 
