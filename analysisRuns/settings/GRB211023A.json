@@ -1,0 +1,72 @@
+{
+ "_about": "GRB 211023A, Inaki's sample (Zhu et al. 2026 rule), windows zhu_pre and zhu_main. Every number from his package of 16 Nov 2026 (sample_bursts.csv md5 e7a163a3, tte_files.csv md5 f0603672). Background: his intervals, order 3 (main) and order 1 on the same intervals (check). No Bala et al. intervals exist for this burst.",
+ "burst": "GRB211023A",
+ "trigger": "bn211023546",
+ "t0_met": 656687148.17411,
+ "dataFolder": "GRB211023A/current",
+ "tteVersion": "v00",
+ "md5": {
+  "n0": "4144a9b6915d54ffcff766ec6dc98b31",
+  "n1": "26bb27d601ff376d5bb12d2ae1f389b0",
+  "n2": "38921b6f7e2e0923dbe50dc60f81d18e",
+  "n3": "17246410be759eede4806e16e54aa14a",
+  "n4": "f6e2e17b5b9f593f4c9eb2f304d4d2c7",
+  "n5": "a2c0c99a4c3b8f4be2a0326a9dcb91fe",
+  "n6": "177bd7d809ae7d4ba40b259bbaca43ea",
+  "n7": "ab22d98c202d3c735ddaf93f899ff913",
+  "n8": "a2ebf84acd752e731f78948cf296acab",
+  "n9": "d41490f7cf7f9e45d81b695004c2aed1",
+  "na": "080726e6be24ad5a7ff1e56bacab0a3f",
+  "nb": "deebf89b1156182f32ba0209456e37b3"
+ },
+ "windowsFile": "windows_zhu_211023A.csv",
+ "inakiGapsFile": "inaki_gaps_sample_pending.csv",
+ "inakiGapsBurst": "211023A",
+ "inakiLiveFile": null,
+ "bkgIntervals": [
+  [
+   -130.072,
+   -16.144
+  ],
+  [
+   168.72,
+   474.144
+  ]
+ ],
+ "bkgOrder": 1,
+ "inakiBkgIntervals": [
+  [
+   -130.072,
+   -16.144
+  ],
+  [
+   168.72,
+   474.144
+  ]
+ ],
+ "inakiBkgOrder": 3,
+ "excluded": [],
+ "pileup": [],
+ "comparisonSets": {
+  "inaki_lightcurve": [
+   "n6",
+   "n7",
+   "n8"
+  ]
+ },
+ "dichiaraBand": null,
+ "dichiara": {},
+ "tiers": {
+  "1": [
+   "zhu_pre",
+   "zhu_main"
+  ]
+ },
+ "redshift": 0.39,
+ "zhuTypeCandidate": "II",
+ "confirmedOrigin": "collapsar",
+ "inakiFlags": {
+  "background": "",
+  "rule": ""
+ }
+}

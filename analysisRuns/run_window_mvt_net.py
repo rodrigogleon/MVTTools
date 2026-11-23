@@ -9,6 +9,9 @@ score. Changes, all fixed before any run with this script (NET_PIPELINE_DESIGN):
     measured at 0.003 ms (sys_note tie:, flag detector-tie if outside one step)
   - results in RESULTS/windows_net/ (RESULTS/windows/ is only read: identical Monte Carlo files are reused from it)
   - --part regression is not run here (run_window_mvt.py); bursts without a regression section run without it
+  - (23 Nov 2026) a window with no valid realisation at 0.003 ms whose upper-limit realisations' 84th percentile is
+    missing or longer than half the window is 'not measurable' (flag not-measurable): no SNR, no class, no CSV row;
+    every Monte Carlo number stays in the record
 The rest is run_window_mvt.py unchanged.
 
 MVT of any time window of a Fermi GBM burst, for the joint MVT - E_peak table (Rodrigo: MVT, Iñaki: E_peak).
@@ -122,7 +125,7 @@ FORBIDDEN_COLUMNS = {"t_start", "t_stop", "dichiara_table", "model", "Epeak_keV"
                      "Dichiara_err", "source"}
 FLAG_ORDER = ["pileup-na", "pileup-b1", "detector-switching", "detector-sensitive", "faint-selection",
               "detector-tie", "bkg-sensitive", "gap",
-              "gap-mismatch", "deadtime", "no-plateau", "no-valid", "class-LUL", "class-UL", "curve-range", "mtm-fail",
+              "gap-mismatch", "deadtime", "no-plateau", "no-valid", "not-measurable", "class-LUL", "class-UL", "curve-range", "mtm-fail",
               "realism"]
 
 parser = argparse.ArgumentParser()
@@ -1121,7 +1124,17 @@ def processWindow(ctx, S, B, label, window, band):
         flags.append("no-plateau")
 
     # steps 9-10 (at the median; with no valid realisation, at the upper-limit value, so the row still has a class)
-    snrAt = q["median_ms"] if valid else q.get("limits_p84_ms")
+    # (23 Nov 2026) no valid realisation and that limit missing or longer than half the window: not measurable
+    lim = q.get("limits_p84_ms")
+    measurable = valid or (lim is not None and np.isfinite(lim) and lim / 1e3 <= L / 2)
+    if not measurable:
+        flags.append("not-measurable")
+        rec["notes"].append(f"no valid realisation at {BIN_WIDTHS[-1] * 1e3:g} ms and the upper-limit realisations' 84th "
+                            f"percentile ({lim} ms) is missing or longer than half the window ({L / 2 * 1e3:g} ms): "
+                            "MVT not measurable")
+        print(f"step 9: not measurable: no valid realisation; upper-limit 84th percentile {lim} ms, half the window "
+              f"{L / 2 * 1e3:g} ms; no SNR or class")
+    snrAt = (q["median_ms"] if valid else lim) if measurable else None
     if snrAt:
         sn = snrStep(S, B, band, window, dets, snrAt, label)
         rec["snr"] = sn
@@ -1244,6 +1257,11 @@ def decide(rec, isMain):
     q = rec["mc"][f"{BIN_WIDTHS[-1]:g}"]
     f = set(rec["flags"])
     reasons = [x for x in ("no-valid", "class-LUL", "class-UL", "no-plateau") if x in f]
+    if "not-measurable" in f:
+        return dict(decision=dict(kind="not measurable", mvt_ms=float("nan"), trusted="false",
+                                  reasons=reasons + ["not-measurable"],
+                                  note="no valid realisation, and the upper-limit realisations' 84th percentile is "
+                                       "missing or longer than half the window: no CSV row"))
     if "no-valid" in f:
         lim = q.get("limits_p84_ms")
         if lim is None:
@@ -1370,8 +1388,8 @@ def writeCsv(S, W):
             if not os.path.exists(p):
                 continue
             rec = json.load(open(p))
-            if rec["status"] != "measured" or rec["decision"]["kind"] == "failed":
-                skipped.append(f"{label} ({rec['status'] if rec['status'] != 'measured' else 'no MVT'})")
+            if rec["status"] != "measured" or rec["decision"]["kind"] in ("failed", "not measurable"):
+                skipped.append(f"{label} ({rec['status'] if rec['status'] != 'measured' else rec['decision']['kind']})")
                 continue
             if dich:
                 rec["dichiaraRef"] = S["dichiara"].get(label, {})
